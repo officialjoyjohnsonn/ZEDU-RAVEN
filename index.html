@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="A tidy, offline-first todo list and notes app built with plain HTML, CSS and JavaScript." />
+  <title>Taskly — Todos &amp; Notes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- ============ Sidebar ============ -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">✓</span>
+        <span class="brand-name">Taskly</span>
+      </div>
+
+      <button class="btn btn-primary btn-block" id="newTaskBtn" type="button">
+        <span aria-hidden="true">＋</span> New task
+      </button>
+
+      <nav class="nav" aria-label="Views">
+        <p class="nav-label">Tasks</p>
+        <ul id="filterList" class="nav-list">
+          <li><button class="nav-item is-active" data-filter="all" type="button"><span class="nav-icon" aria-hidden="true">▤</span> All <span class="count" data-count="all">0</span></button></li>
+          <li><button class="nav-item" data-filter="today" type="button"><span class="nav-icon" aria-hidden="true">◷</span> Today <span class="count" data-count="today">0</span></button></li>
+          <li><button class="nav-item" data-filter="upcoming" type="button"><span class="nav-icon" aria-hidden="true">▦</span> Upcoming <span class="count" data-count="upcoming">0</span></button></li>
+          <li><button class="nav-item" data-filter="active" type="button"><span class="nav-icon" aria-hidden="true">○</span> Active <span class="count" data-count="active">0</span></button></li>
+          <li><button class="nav-item" data-filter="completed" type="button"><span class="nav-icon" aria-hidden="true">✓</span> Completed <span class="count" data-count="completed">0</span></button></li>
+        </ul>
+
+        <p class="nav-label">Notes</p>
+        <ul class="nav-list">
+          <li><button class="nav-item" id="notesToggle" data-view="notes" type="button"><span class="nav-icon" aria-hidden="true">✎</span> All notes <span class="count" data-count="notes">0</span></button></li>
+        </ul>
+
+        <p class="nav-label" id="categoryLabel" hidden>Categories</p>
+        <ul class="nav-list" id="categoryList"></ul>
+      </nav>
+
+      <div class="progress-card">
+        <div class="progress-head">
+          <span>Today's progress</span>
+          <span id="progressPct">0%</span>
+        </div>
+        <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+        <p class="progress-sub" id="progressSub">Nothing due today</p>
+      </div>
+
+      <div class="sidebar-foot">
+        <button class="btn btn-ghost btn-block" id="themeToggle" type="button"><span aria-hidden="true">◐</span> <span id="themeLabel">Dark mode</span></button>
+        <div class="row gap-6">
+          <button class="btn btn-ghost btn-sm" id="exportBtn" type="button">Export</button>
+          <button class="btn btn-ghost btn-sm" id="importBtn" type="button">Import</button>
+        </div>
+        <input type="file" id="importFile" accept="application/json" hidden />
+      </div>
+    </aside>
+
+    <!-- ============ Main ============ -->
+    <main class="main">
+      <header class="topbar">
+        <button class="icon-btn only-mobile" id="menuBtn" type="button" aria-label="Toggle sidebar">☰</button>
+        <div class="search">
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <input type="search" id="searchInput" placeholder="Search tasks and notes…" aria-label="Search" />
+        </div>
+        <button class="btn btn-primary" id="newNoteBtn" type="button"><span aria-hidden="true">✎</span> New note</button>
+      </header>
+
+      <!-- ----- Tasks view ----- -->
+      <section class="view" id="tasksView">
+        <div class="view-head">
+          <div>
+            <h1 id="viewTitle">All tasks</h1>
+            <p class="view-sub" id="viewSub">0 tasks</p>
+          </div>
+          <div class="sort">
+            <label for="sortSelect" class="muted">Sort</label>
+            <select id="sortSelect">
+              <option value="manual">Manual</option>
+              <option value="due">Due date</option>
+              <option value="priority">Priority</option>
+              <option value="created">Newest</option>
+              <option value="alpha">A → Z</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Quick add -->
+        <form class="quick-add" id="quickAddForm">
+          <input type="text" id="quickAddInput" placeholder="Add a task and press Enter…" autocomplete="off" aria-label="Task title" />
+          <button class="icon-btn" id="quickAdvancedBtn" type="button" aria-label="More options" title="More options">▾</button>
+          <button class="btn btn-primary" type="submit">Add</button>
+
+          <div class="quick-extra" id="quickExtra" hidden>
+            <input type="text" id="quickNoteInput" placeholder="Note (optional)…" aria-label="Task note" />
+            <input type="date" id="quickDueInput" aria-label="Due date" />
+            <select id="quickPriorityInput" aria-label="Priority">
+              <option value="low">Low priority</option>
+              <option value="medium" selected>Medium priority</option>
+              <option value="high">High priority</option>
+            </select>
+            <input type="text" id="quickCategoryInput" placeholder="Category" aria-label="Category" list="categoryDatalist" />
+            <datalist id="categoryDatalist"></datalist>
+          </div>
+        </form>
+
+        <div class="chips" id="statusChips">
+          <button class="chip" data-status="open" type="button">Open</button>
+          <button class="chip" data-status="done" type="button">Done</button>
+          <button class="chip is-active" data-status="all" type="button">All</button>
+        </div>
+
+        <ul class="task-list" id="taskList" aria-live="polite"></ul>
+
+        <div class="empty" id="emptyState" hidden>
+          <div class="empty-art" aria-hidden="true">☁</div>
+          <p class="empty-title">All clear</p>
+          <p class="empty-sub">Add a task above, or enjoy the calm.</p>
+        </div>
+
+        <footer class="list-foot" id="listFoot">
+          <span id="remainingLabel">0 left</span>
+          <button class="btn btn-ghost btn-sm" id="clearDoneBtn" type="button">Clear completed</button>
+        </footer>
+      </section>
+
+      <!-- ----- Notes view ----- -->
+      <section class="view" id="notesView" hidden>
+        <div class="view-head">
+          <div>
+            <h1>Notes</h1>
+            <p class="view-sub" id="notesSub">0 notes</p>
+          </div>
+        </div>
+
+        <form class="quick-add" id="noteForm">
+          <input type="text" id="noteTitleInput" placeholder="Note title…" aria-label="Note title" autocomplete="off" />
+          <button class="btn btn-primary" type="submit">Add note</button>
+        </form>
+
+        <ul class="note-grid" id="noteGrid"></ul>
+
+        <div class="empty" id="notesEmpty" hidden>
+          <div class="empty-art" aria-hidden="true">✎</div>
+          <p class="empty-title">No notes yet</p>
+          <p class="empty-sub">Capture an idea with the field above.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ============ Task modal ============ -->
+  <div class="modal" id="taskModal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <header class="modal-head">
+        <h2 id="modalTitle">New task</h2>
+        <button class="icon-btn" data-close type="button" aria-label="Close">✕</button>
+      </header>
+
+      <form id="taskForm" class="modal-body">
+        <label class="field">
+          <span>Title</span>
+          <input type="text" id="fTitle" required placeholder="What needs doing?" />
+        </label>
+
+        <label class="field">
+          <span>Note</span>
+          <textarea id="fNote" rows="3" placeholder="Details, links, context…"></textarea>
+        </label>
+
+        <div class="field-row">
+          <label class="field">
+            <span>Due date</span>
+            <input type="date" id="fDue" />
+          </label>
+          <label class="field">
+            <span>Priority</span>
+            <select id="fPriority">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="field-row">
+          <label class="field">
+            <span>Category</span>
+            <input type="text" id="fCategory" placeholder="e.g. Work" list="categoryDatalist" />
+          </label>
+          <label class="field">
+            <span>Repeat</span>
+            <select id="fRepeat">
+              <option value="none">Does not repeat</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </label>
+        </div>
+
+        <footer class="modal-foot">
+          <button class="btn btn-danger" id="deleteTaskBtn" type="button" hidden>Delete</button>
+          <div class="row gap-6">
+            <button class="btn btn-ghost" data-close type="button">Cancel</button>
+            <button class="btn btn-primary" type="submit">Save</button>
+          </div>
+        </footer>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ Note modal ============ -->
+  <div class="modal" id="noteModal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="noteModalTitle">
+      <header class="modal-head">
+        <h2 id="noteModalTitle">Edit note</h2>
+        <button class="icon-btn" data-close type="button" aria-label="Close">✕</button>
+      </header>
+
+      <form id="noteFormEdit" class="modal-body">
+        <label class="field">
+          <span>Title</span>
+          <input type="text" id="nTitle" required placeholder="Note title" />
+        </label>
+        <label class="field">
+          <span>Content</span>
+          <textarea id="nBody" rows="10" placeholder="Write anything…"></textarea>
+        </label>
+        <footer class="modal-foot">
+          <button class="btn btn-danger" id="deleteNoteBtn" type="button">Delete</button>
+          <div class="row gap-6">
+            <button class="btn btn-ghost" data-close type="button">Cancel</button>
+            <button class="btn btn-primary" type="submit">Save</button>
+          </div>
+        </footer>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
+

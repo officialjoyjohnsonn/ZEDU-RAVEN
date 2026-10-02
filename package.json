@@ -1,0 +1,16 @@
+{
+  "name": "taskly",
+  "version": "1.0.0",
+  "description": "Taskly — an offline-first todo list and notes app in plain HTML, CSS and JS.",
+  "private": true,
+  "scripts": {
+    "start": "npx serve .",
+    "test": "node verify.js && node smoke.test.js"
+  },
+  "license": "MIT",
+  "type": "commonjs",
+  "devDependencies": {
+    "jsdom": "^30.1.1"
+  }
+}
+
